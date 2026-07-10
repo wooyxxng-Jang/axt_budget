@@ -47,7 +47,7 @@ function rebuildMonthlySummary() {
     }
   });
 
-  var months = Object.keys(monthsSet).sort();
+  var months = fiscalMonths_(monthsSet);
 
   // 라인 목록: 마스터 라인 전체(실적 0이어도 표시) + 마스터에 없는 원장 라인
   var lines = [];
@@ -100,4 +100,33 @@ function rebuildMonthlySummary() {
   sh.setFrozenRows(1);
   sh.setFrozenColumns(5);
   return { lines: out.length, months: months.length };
+}
+
+/**
+ * 월 컬럼 목록 — 배정예산 마스터와 동일하게 회계연도(3월~익년 2월) 12개월 고정.
+ * 회계연도는 원장 데이터의 가장 이른 월로 판단하고, 범위 밖 월과 '(일자없음)'은 뒤에 덧붙인다.
+ */
+function fiscalMonths_(monthsSet) {
+  var dataMonths = Object.keys(monthsSet).filter(function (m) { return /^\d{4}-\d{2}$/.test(m); }).sort();
+  if (!dataMonths.length) {
+    return monthsSet['(일자없음)'] ? ['(일자없음)'] : [];
+  }
+
+  var y = Number(dataMonths[0].substring(0, 4));
+  var m = Number(dataMonths[0].substring(5, 7));
+  var fyStartYear = m >= 3 ? y : y - 1;
+
+  var months = [];
+  for (var i = 0; i < 12; i++) {
+    var mm = 3 + i;
+    var yy = fyStartYear;
+    if (mm > 12) { mm -= 12; yy += 1; }
+    months.push(yy + '-' + ('0' + mm).slice(-2));
+  }
+  // 회계연도 범위 밖 데이터 월 보존
+  dataMonths.forEach(function (dm) {
+    if (months.indexOf(dm) < 0) months.push(dm);
+  });
+  if (monthsSet['(일자없음)']) months.push('(일자없음)');
+  return months;
 }

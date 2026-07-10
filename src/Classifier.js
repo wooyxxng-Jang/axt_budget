@@ -41,14 +41,22 @@ function classifyText_(text, kw) {
 }
 
 /**
- * 텍스트(대문자 정규화됨)에 포함된 첫 번째 키워드 반환 (영문 대소문자 무시)
+ * 텍스트(대문자 정규화됨)에 포함된 첫 번째 키워드 반환
+ * - 영문 대소문자 무시
+ * - 2단어 이상 키워드는 공백 무시 비교 병행
+ *   (실데이터에 'ArtWithImpact'가 'Art with impact'로 적히는 사례가 있음)
  * @return {string|null}
  */
 function findKeyword_(textUpper, keywords) {
+  var textNoSpace = textUpper.replace(/\s+/g, '');
   for (var i = 0; i < keywords.length; i++) {
     var k = normStr_(keywords[i]);
     if (!k) continue;
-    if (textUpper.indexOf(k.toUpperCase()) >= 0) return k;
+    var kUpper = k.toUpperCase();
+    if (textUpper.indexOf(kUpper) >= 0) return k;
+    var kNoSpace = kUpper.replace(/\s+/g, '');
+    // 공백 제거 비교는 짧은 키워드의 우연한 일치(오탐)를 막기 위해 4자 이상만
+    if (kNoSpace.length >= 4 && textNoSpace.indexOf(kNoSpace) >= 0) return k;
   }
   return null;
 }

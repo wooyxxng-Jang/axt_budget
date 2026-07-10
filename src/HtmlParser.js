@@ -90,13 +90,19 @@ function normColName_(s) {
   return normStr_(s).replace(/\s+/g, '');
 }
 
-/** <tr> 문자열 → 텍스트 셀 배열 */
+/**
+ * <tr> 문자열 → 텍스트 셀 배열
+ * 세인트 파일은 헤더 행의 <td>가 닫힘 태그(</td>) 없이 이어지므로,
+ * 셀 시작 태그(<td>/<th>) 기준으로 분할해 추출한다.
+ */
 function extractCells_(tr) {
-  var matches = tr.match(/<t[dh][^>]*>[\s\S]*?<\/t[dh]>/gi) || [];
-  return matches.map(function (cell) {
-    var inner = cell.replace(/^<t[dh][^>]*>/i, '').replace(/<\/t[dh]>$/i, '');
-    inner = inner.replace(/<[^>]+>/g, ' ');
-    return decodeHtmlEntities_(inner).replace(/\s+/g, ' ').trim();
+  var inner = tr.replace(/^[\s\S]*?<tr[^>]*>/i, '').replace(/<\/tr>[\s\S]*$/i, '');
+  var segs = inner.split(/<t[dh][^>]*>/i);
+  segs.shift(); // 첫 셀 시작 전 내용 제거
+  return segs.map(function (seg) {
+    var content = seg.replace(/<\/t[dh]>[\s\S]*$/i, '');
+    content = content.replace(/<[^>]+>/g, ' ');
+    return decodeHtmlEntities_(content).replace(/\s+/g, ' ').trim();
   });
 }
 
