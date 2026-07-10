@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body { font-family: Arial, "Malgun Gothic", sans-serif; font-size: 13px; margin: 10px; }
+    h4 { margin: 0 0 8px 0; }
+    select, input[type=text] { width: 100%; box-sizing: border-box; padding: 6px; margin-bottom: 8px; font-size: 13px; }
+    ul { list-style: none; padding: 0; margin: 0 0 10px 0; max-height: 320px; overflow-y: auto; border: 1px solid #ddd; }
+    li { display: flex; align-items: center; padding: 5px 8px; border-bottom: 1px solid #eee; gap: 4px; }
+    li:last-child { border-bottom: none; }
+    li .kw { flex: 1; word-break: break-all; }
+    li input[type=text] { margin: 0; padding: 3px; flex: 1; }
+    button { font-size: 12px; padding: 4px 8px; cursor: pointer; }
+    .add-row { display: flex; gap: 6px; }
+    .add-row input { flex: 1; margin: 0; }
+    .add-row button { white-space: nowrap; }
+    #msg { margin-top: 8px; min-height: 18px; }
+    .err { color: #c5221f; }
+    .ok { color: #188038; }
+    .empty { color: #999; padding: 8px; }
+    .danger { color: #c5221f; }
+  </style>
+</head>
+<body>
+  <h4>키워드 관리</h4>
+  <select id="type" onchange="render()"></select>
+  <ul id="list"><li class="empty">불러오는 중...</li></ul>
+  <div class="add-row">
+    <input type="text" id="newKw" placeholder="새 키워드 입력" onkeydown="if(event.key==='Enter')add()">
+    <button onclick="add()">추가</button>
+  </div>
+  <div id="msg"></div>
+
+  <script>
+    var state = { types: [], data: {} };
+    var editing = null;      // 수정 중인 키워드
+    var confirmDelete = null; // 삭제 확인 대기 중인 키워드
+
+    google.script.run.withSuccessHandler(init).withFailureHandler(showErr).sbGetKeywords();
+
+    function init(res) {
+      state = res;
+      var sel = document.getElementById('type');
+      sel.innerHTML = '';
+      res.types.forEach(function (t) {
+        var opt = document.createElement('option');
+        opt.value = t; opt.textContent = t;
+        sel.appendChild(opt);
+      });
+      render();
+    }
+
+    function refresh(res) {
+      state = res;
+      editing = null;
+      confirmDelete = null;
+      render();
+      showOk('반영되었습니다.');
+    }
+
+    function currentType() { return document.getElementById('type').value; }
+
+    function render() {
+      var list = document.getElementById('list');
+      var items = state.data[currentType()] || [];
+      list.innerHTML = '';
+      if (!items.length) {
+        list.innerHTML = '<li class="empty">등록된 키워드가 없습니다.</li>';
+        return;
+      }
+      items.forEach(function (kw) {
+        var li = document.createElement('li');
+        if (editing === kw) {
+          var input = document.createElement('input');
+          input.type = 'text'; input.value = kw; input.id = 'editInput';
+          var save = mkBtn('저장', function () { update(kw, input.value); });
+          var cancel = mkBtn('취소', function () { editing = null; render(); });
+          li.appendChild(input); li.appendChild(save); li.appendChild(cancel);
+        } else {
+          var span = document.createElement('span');
+          span.className = 'kw'; span.textContent = kw;
+          li.appendChild(span);
+          li.appendChild(mkBtn('수정', function () { editing = kw; confirmDelete = null; render(); }));
+          if (confirmDelete === kw) {
+            var btn = mkBtn('삭제 확정', function () { del(kw); });
+            btn.className = 'danger';
+            li.appendChild(btn);
+          } else {
+            li.appendChild(mkBtn('삭제', function () { confirmDelete = kw; editing = null; render(); }));
+          }
+        }
+        list.appendChild(li);
+      });
+      var ei = document.getElementById('editInput');
+      if (ei) ei.focus();
+    }
+
+    function mkBtn(label, fn) {
+      var b = document.createElement('button');
+      b.textContent = label;
+      b.onclick = fn;
+      return b;
+    }
+
+    function add() {
+      var v = document.getElementById('newKw').value;
+      clearMsg();
+      google.script.run.withSuccessHandler(function (res) {
+        document.getElementById('newKw').value = '';
+        refresh(res);
+      }).withFailureHandler(showErr).sbAddKeyword(currentType(), v);
+    }
+
+    function update(oldV, newV) {
+      clearMsg();
+      google.script.run.withSuccessHandler(refresh).withFailureHandler(showErr)
+        .sbUpdateKeyword(currentType(), oldV, newV);
+    }
+
+    function del(v) {
+      clearMsg();
+      google.script.run.withSuccessHandler(refresh).withFailureHandler(showErr)
+        .sbDeleteKeyword(currentType(), v);
+    }
+
+    function showErr(e) {
+      document.getElementById('msg').innerHTML = '<span class="err">' + (e && e.message ? e.message : e) + '</span>';
+    }
+    function showOk(m) {
+      document.getElementById('msg').innerHTML = '<span class="ok">' + m + '</span>';
+    }
+    function clearMsg() { document.getElementById('msg').innerHTML = ''; }
+  </script>
+</body>
+</html>

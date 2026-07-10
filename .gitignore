@@ -1,0 +1,9 @@
+# clasp 인증 토큰 — 절대 커밋 금지
+.clasprc.json
+**/.clasprc.json
+
+node_modules/
+npm-debug.log*
+*.log
+.DS_Store
+Thumbs.db

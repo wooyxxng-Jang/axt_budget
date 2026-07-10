@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body { font-family: Arial, "Malgun Gothic", sans-serif; font-size: 13px; margin: 16px; }
+    .hint { color: #666; margin-bottom: 12px; line-height: 1.5; }
+    #file { margin-bottom: 12px; }
+    button { padding: 8px 16px; font-size: 13px; cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .6; }
+    #status { margin-top: 14px; line-height: 1.7; }
+    .spin { color: #1a73e8; }
+    .err { color: #c5221f; white-space: pre-wrap; }
+    .ok { color: #188038; font-weight: bold; }
+    table.result { border-collapse: collapse; margin-top: 8px; }
+    table.result td { border: 1px solid #ddd; padding: 4px 10px; }
+    table.result td:last-child { text-align: right; }
+  </style>
+</head>
+<body>
+  <div class="hint">
+    세인트에서 다운로드한 예산집행상세 파일(.xls — 실제로는 HTML)을 선택하세요.<br>
+    회계연도 전체 기간 파일을 올려도 기존 데이터는 upsert로 안전하게 유지됩니다.
+  </div>
+  <input type="file" id="file" accept=".xls,.html,.htm">
+  <br>
+  <button id="btn" onclick="upload()">업로드 및 처리</button>
+  <div id="status"></div>
+
+  <script>
+    function upload() {
+      var f = document.getElementById('file').files[0];
+      var status = document.getElementById('status');
+      if (!f) { status.innerHTML = '<span class="err">파일을 먼저 선택해 주세요.</span>'; return; }
+
+      document.getElementById('btn').disabled = true;
+      status.innerHTML = '<span class="spin">파일을 읽는 중...</span>';
+
+      var reader = new FileReader();
+      reader.onerror = function () {
+        fail({ message: '파일을 읽지 못했습니다.' });
+      };
+      reader.onload = function (e) {
+        status.innerHTML = '<span class="spin">파싱 및 분류 처리 중... (수십 초 걸릴 수 있습니다)</span>';
+        google.script.run
+          .withSuccessHandler(done)
+          .withFailureHandler(fail)
+          .processUpload(e.target.result);
+      };
+      reader.readAsText(f, 'utf-8');
+    }
+
+    function done(s) {
+      var rows = [
+        ['파싱된 행', s.parsed],
+        ['원장 신규 반영 (자동포함)', s.autoIncluded],
+        ['원장 데이터 갱신 (기존 건)', s.ledgerUpdated],
+        ['자동 제외 → 감사로그', s.autoExcluded],
+        ['검토대기함 신규', s.reviewQueued],
+        ['상세분류 확인 대기열 신규', s.detailQueued],
+        ['장학금 분류 대기함 신규', s.scholarshipNew],
+        ['이미 처리된 건 (스킵)', s.alreadyKnown]
+      ];
+      if (s.dupInFile) rows.push(['파일 내 중복 키 (스킵)', s.dupInFile]);
+      var html = '<div class="ok">처리 완료 — 월별집계가 갱신되었습니다.</div><table class="result">';
+      rows.forEach(function (r) { html += '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>'; });
+      html += '</table>';
+      var pending = (s.reviewQueued || 0) + (s.detailQueued || 0) + (s.scholarshipNew || 0);
+      if (pending > 0) {
+        html += '<p>사람 확인이 필요한 건이 ' + pending + '건 있습니다. 각 대기함 시트에서 처리 후 메뉴로 반영해 주세요.</p>';
+      }
+      document.getElementById('status').innerHTML = html;
+      document.getElementById('btn').disabled = false;
+    }
+
+    function fail(e) {
+      document.getElementById('status').innerHTML = '<span class="err">오류: ' + (e && e.message ? e.message : e) + '</span>';
+      document.getElementById('btn').disabled = false;
+    }
+  </script>
+</body>
+</html>
