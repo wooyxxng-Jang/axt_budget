@@ -16,7 +16,18 @@ function onOpen() {
     .addSeparator()
     .addItem('키워드 관리 (사이드바)', 'showKeywordSidebar')
     .addItem('시트 초기화/점검', 'initializeSheets')
+    .addSeparator()
+    .addItem('[1회성] 마스터 상세분류명 라벨 채우기', 'menuAddMasterDetailLabels')
     .addToUi();
+}
+
+function menuAddMasterDetailLabels() {
+  var result = addMasterDetailLabels();
+  SpreadsheetApp.getUi().alert(
+    '마스터 상세분류명 라벨 채우기 완료\n\n' +
+    result.rows + '개 행에 라벨을 입력했습니다 (열 ' + result.labelCol + ').\n' +
+    '설정 시트 D~H열의 라우팅 규칙에 이 라벨을 반영해 주세요.'
+  );
 }
 
 function menuRebuildSummary() {
