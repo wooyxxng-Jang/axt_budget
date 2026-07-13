@@ -31,9 +31,12 @@ var SEED_RULES = [
   ['TBC0184', '42371110', '기본값', '', '(마스터 상세분류명으로 교체)']
 ];
 
+// 배정예산 마스터: 우영님 구글시트, '2026 예산' 탭이 회계연도 내 살아있는 마스터
+// (스프레드시트에는 예산/ATC/대학혁신/기금인출/기금/연도별 정리본 등 다른 탭도 있으니 혼동 주의)
+// 회계연도가 바뀌면 MASTER_SHEET_NAME을 '2027 예산' 등으로 직접 갱신해야 함
 var SEED_GENERAL = [
-  [SETTING_KEY.MASTER_ID, ''],
-  [SETTING_KEY.MASTER_SHEET, '']
+  [SETTING_KEY.MASTER_ID, '1avOTbMw9dw4tMZC6sMLClbHoKbKMuoCTpL3qo-mwqAI'],
+  [SETTING_KEY.MASTER_SHEET, '2026 예산']
 ];
 
 function initializeSheets() {
@@ -65,10 +68,13 @@ function initializeSheets() {
 
   SpreadsheetApp.getUi().alert(
     '시트 초기화/점검 완료\n\n' +
+    '배정예산 마스터(구글시트 "2026 예산" 탭)가 설정 시트 J~K열에 기본 연결되었습니다.\n\n' +
     '다음 단계:\n' +
-    '1. 설정 시트 J~K열에 배정예산 마스터 시트 ID/시트명 입력\n' +
-    '2. 설정 시트 D~H열 라우팅 규칙의 상세분류명을 마스터 실제 값으로 교체\n' +
-    '3. 메뉴 [AXT 예산 > 세인트 파일 업로드] 실행'
+    '1. 마스터 시트에 "상세분류명" 컬럼을 추가해 상세분류별 짧은 라벨을 입력\n' +
+    '   (라벨을 넣지 않으면 상세분류/근거 설명문 첫 줄을 자동 사용)\n' +
+    '2. 설정 시트 D~H열 라우팅 규칙의 상세분류명을 1번에서 정한 라벨로 교체\n' +
+    '3. 메뉴 [AXT 예산 > 세인트 파일 업로드] 실행\n\n' +
+    '※ 회계연도가 바뀌면 설정 시트의 MASTER_SHEET_NAME 값을 다음 연도 탭명으로 직접 갱신해야 합니다.'
   );
 }
 

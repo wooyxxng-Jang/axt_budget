@@ -70,7 +70,7 @@ function normStr_(v) {
 /** "1,223,800", "1,000-", "(500)" 등 금액 문자열 → 숫자 */
 function parseAmount_(v) {
   if (typeof v === 'number') return v;
-  var s = normStr_(v).replace(/[,\s원]/g, '');
+  var s = normStr_(v).replace(/[,\s원₩]/g, '');
   if (!s) return 0;
   var neg = false;
   if (/^\(.*\)$/.test(s)) { neg = true; s = s.slice(1, -1); }
