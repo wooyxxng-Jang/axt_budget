@@ -59,3 +59,33 @@ function addMasterDetailLabels() {
 
   return { descCol: descCol, labelCol: labelCol, rows: MASTER_LABELS_2026_.length };
 }
+
+/**
+ * 설정 시트 키워드 '유형' 열의 예전 한글 값(강한제외키워드/프로젝트prefix/...)을
+ * 새 영문 값(Strong Exclude/Project Prefix/...)으로 1회 변환한다.
+ * 이미 영문이거나 빈 값인 행은 건드리지 않음 — 여러 번 실행해도 안전.
+ */
+function migrateKeywordTypeLabels() {
+  var sh = getSettingsSheet_();
+  var last = sh.getLastRow();
+  if (last <= KW_HEADER_ROW) return { changed: 0 };
+
+  var range = sh.getRange(KW_HEADER_ROW + 1, 1, last - KW_HEADER_ROW, 1);
+  var vals = range.getValues();
+  var changed = 0;
+  for (var i = 0; i < vals.length; i++) {
+    var old = normStr_(vals[i][0]);
+    if (old && KW_TYPE_LEGACY_MAP[old]) {
+      vals[i][0] = KW_TYPE_LEGACY_MAP[old];
+      changed++;
+    }
+  }
+  if (changed) range.setValues(vals);
+
+  SpreadsheetApp.getUi().alert(
+    changed
+      ? '키워드 유형 ' + changed + '건을 영문으로 변환했습니다.'
+      : '변환할 한글 유형 값이 없습니다 (이미 영문이거나 비어 있음).'
+  );
+  return { changed: changed };
+}

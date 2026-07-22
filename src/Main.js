@@ -15,9 +15,11 @@ function onOpen() {
     .addItem('선택 셀 드릴다운 (월별집계)', 'showDrilldown')
     .addSeparator()
     .addItem('키워드 관리 (사이드바)', 'showKeywordSidebar')
+    .addItem('라우팅 규칙 검증', 'validateRoutingRules')
     .addItem('시트 초기화/점검', 'initializeSheets')
     .addSeparator()
     .addItem('[1회성] 마스터 상세분류명 라벨 채우기', 'menuAddMasterDetailLabels')
+    .addItem('[1회성] 키워드 유형 영문 변환', 'migrateKeywordTypeLabels')
     .addToUi();
 }
 

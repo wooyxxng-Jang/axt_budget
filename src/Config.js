@@ -27,14 +27,25 @@ var DETAILQ_HEADERS = ['업서트키'].concat(SRC_COLS, ['판정근거', '후보
 var AUDIT_HEADERS = ['업서트키'].concat(SRC_COLS, ['제외사유', '기록일시']);
 
 // 키워드 유형 (설정 시트에서 관리, 스펙 3장)
+// 값은 설정 시트의 '유형' 열에 그대로 저장되는 문자열이므로 영문으로 통일한다.
+// 기존 한글 값이 남아있는 시트는 migrateKeywordTypeLabels()로 1회 변환한다 (OneTimeSetup.js).
 var KW_TYPE = {
-  STRONG_EXCLUDE: '강한제외키워드', // 교수성함 등과 무관하게 무조건 제외 (예: 알바트로스세미나)
-  PREFIX: '프로젝트prefix',
-  STRONG: '강한키워드',
-  PROFESSOR: '교수성함',
-  OTHER_DEPT: '타학과키워드'
+  STRONG_EXCLUDE: 'Strong Exclude',  // 교수성함 등과 무관하게 무조건 제외 (예: 알바트로스세미나)
+  PREFIX: 'Project Prefix',          // 아텍 고유 프로그램명
+  STRONG: 'Strong Include',          // 아텍/ATC 등
+  PROFESSOR: 'Professor Name',
+  OTHER_DEPT: 'Other Dept'
 };
 var KW_TYPE_LIST = [KW_TYPE.STRONG_EXCLUDE, KW_TYPE.PREFIX, KW_TYPE.STRONG, KW_TYPE.PROFESSOR, KW_TYPE.OTHER_DEPT];
+
+// 마이그레이션용: 이전(한글) 유형 값 → 새 영문 값
+var KW_TYPE_LEGACY_MAP = {
+  '강한제외키워드': KW_TYPE.STRONG_EXCLUDE,
+  '프로젝트prefix': KW_TYPE.PREFIX,
+  '강한키워드': KW_TYPE.STRONG,
+  '교수성함': KW_TYPE.PROFESSOR,
+  '타학과키워드': KW_TYPE.OTHER_DEPT
+};
 
 var STATUS = { PENDING: '대기', DONE: '반영완료', TO_DETAIL: '상세분류대기' };
 var PATH = { AUTO: '자동', REVIEW: '검토확정', SCHOLARSHIP: '장학금태깅', DETAIL: '상세분류확정' };

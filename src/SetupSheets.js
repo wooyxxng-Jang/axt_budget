@@ -119,7 +119,10 @@ function setupSettingsSheet_() {
   sh.getRange(1, 1).setValue('■ 키워드 (사이드바 또는 직접 편집)').setFontWeight('bold');
   sh.getRange(KW_HEADER_ROW, 1, 1, 2).setValues([['유형', '키워드']]).setFontWeight('bold');
 
-  sh.getRange(1, RULE_COL_START).setValue('■ 상세분류 라우팅 규칙 (매칭방식: 포함/prefix/기본값)').setFontWeight('bold');
+  sh.getRange(1, RULE_COL_START).setValue(
+    '■ 상세분류 라우팅 규칙 (매칭방식: 포함/prefix/기본값) — 상세분류 열은 마스터 시트 "상세분류명" 컬럼의 라벨과 정확히 일치해야 함. ' +
+    '라벨 자체를 바꾸려면 마스터 시트에서 수정하고, 여기 값도 함께 갱신할 것 (메뉴의 [라우팅 규칙 검증]으로 어긋난 값 확인 가능)'
+  ).setFontWeight('bold').setWrap(true);
   sh.getRange(KW_HEADER_ROW, RULE_COL_START, 1, RULE_HEADERS.length).setValues([RULE_HEADERS]).setFontWeight('bold');
 
   sh.getRange(1, GENERAL_COL_START).setValue('■ 일반 설정').setFontWeight('bold');
@@ -150,5 +153,35 @@ function setupSettingsSheet_() {
     .build();
   sh.getRange(dataRow, RULE_COL_START + 2, maxRows - KW_HEADER_ROW, 1).setDataValidation(rule);
 
+  // 키워드 유형 드롭다운 — 사이드바 없이 셀 직접 편집 시 오타 방지
+  var typeRule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(KW_TYPE_LIST, true)
+    .setAllowInvalid(false)
+    .build();
+  sh.getRange(dataRow, 1, maxRows - KW_HEADER_ROW, 1).setDataValidation(typeRule);
+
   return sh;
+}
+
+/** 메뉴: 라우팅 규칙(D~H열)의 상세분류 값이 마스터 라벨과 실제로 일치하는지 점검 */
+function validateRoutingRules() {
+  var ui = SpreadsheetApp.getUi();
+  var rules = getRoutingRules_();
+  if (!rules.length) { ui.alert('등록된 라우팅 규칙이 없습니다.'); return; }
+
+  var problems = [];
+  rules.forEach(function (r, i) {
+    var candidates = getDetailCandidates_(r.fund, r.itemCode);
+    if (candidates.length === 0) candidates = getFundDetailCandidates_(r.fund);
+    if (candidates.indexOf(r.detail) < 0) {
+      problems.push('행 ' + (i + 1) + ': ' + r.fund + '(' + r.itemCode + ') → "' + r.detail +
+        '" — 마스터 후보에 없음 (후보: ' + (candidates.join(', ') || '없음') + ')');
+    }
+  });
+
+  ui.alert(
+    problems.length
+      ? '어긋난 라우팅 규칙 ' + problems.length + '건\n\n' + problems.join('\n')
+      : '모든 라우팅 규칙이 마스터 라벨과 일치합니다.'
+  );
 }
