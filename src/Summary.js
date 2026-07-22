@@ -7,6 +7,19 @@
 
 var SUMMARY_FIXED_HEADERS = ['자금', '자금명', '약정항목', '약정항목 명', '상세분류', '배정액'];
 
+/**
+ * 월별집계 합산 키.
+ * - 상세분류 라벨이 있으면 (자금 + 라벨) 기준 → 세인트 약정항목 코드가 마스터 편성 코드와
+ *   달라도 같은 예산 라인으로 합산 (라벨은 자금 단위로 유일하게 보장됨, Master.js 참고).
+ * - 라벨이 없거나 '(미지정)'이면 (자금 + 약정항목) 코드 기준으로 분리.
+ */
+function summaryLineKey_(fund, itemCode, detail) {
+  var f = normStr_(fund);
+  var d = normStr_(detail);
+  if (d && d !== '(미지정)') return f + '#L#' + d;
+  return f + '#C#' + normStr_(itemCode);
+}
+
 function rebuildMonthlySummary() {
   var master = getMasterIndex_();
   var ledger = readLedgerData_();
@@ -19,7 +32,10 @@ function rebuildMonthlySummary() {
   var cAmt = LEDGER_HEADERS.indexOf('사용금액');
   var cDetail = LEDGER_HEADERS.indexOf('상세분류');
 
-  // 원장 → 라인(자금|약정항목|상세분류)별 × 월별 합산
+  // 원장 → 라인별 × 월별 합산.
+  // 집계 키는 (자금+상세분류라벨) 기준 — 세인트 약정항목 코드가 마스터 편성 코드와 달라도
+  // 사람이 지정한 상세분류 라벨로 같은 예산 라인에 합산되도록 한다.
+  // 라벨이 없는(미지정/미편성) 건만 (자금+약정항목) 코드 기준으로 분리 표시.
   var usage = {};        // lineKey → { monthKey → amount }
   var monthsSet = {};
   var ledgerLines = {};  // lineKey → 라인 메타 (마스터에 없는 라인 대비)
@@ -28,7 +44,7 @@ function rebuildMonthlySummary() {
     var fund = normStr_(row[cFund]);
     var itemCode = normStr_(row[cItem]);
     var detail = effectiveDetail_(row[cDetail], fund, itemCode);
-    var lk = fund + '|' + itemCode + '|' + detail;
+    var lk = summaryLineKey_(fund, itemCode, detail);
     var mk = monthKey_(row[cDate]) || '(일자없음)';
     monthsSet[mk] = true;
 
@@ -41,7 +57,7 @@ function rebuildMonthlySummary() {
         fundName: normStr_(row[cFundName]),
         itemCode: itemCode,
         itemName: normStr_(row[cItemName]),
-        detail: detail,
+        detail: (detail === '(미지정)' ? '(미지정)' : detail),
         budget: ''
       };
     }
@@ -57,14 +73,16 @@ function rebuildMonthlySummary() {
   var extraLines = [];
   var lineKeySeen = {};
   master.lines.forEach(function (l) {
-    var lk = l.fund + '|' + l.itemCode + '|' + l.detail;
+    var lk = summaryLineKey_(l.fund, l.itemCode, l.detail);
     if (lineKeySeen[lk]) return;
     lineKeySeen[lk] = true;
+    l._key = lk;
     lines.push(l); // 마스터 원본 순서 유지 (재정렬하지 않음)
   });
   Object.keys(ledgerLines).forEach(function (lk) {
     if (!lineKeySeen[lk]) {
       lineKeySeen[lk] = true;
+      ledgerLines[lk]._key = lk;
       extraLines.push(ledgerLines[lk]);
     }
   });
@@ -78,8 +96,7 @@ function rebuildMonthlySummary() {
   // 출력 테이블 구성
   var headers = SUMMARY_FIXED_HEADERS.concat(months, ['사용합계', '잔액']);
   var out = lines.map(function (l) {
-    var lk = l.fund + '|' + l.itemCode + '|' + l.detail;
-    var byMonth = usage[lk] || {};
+    var byMonth = usage[l._key] || {};
     var total = 0;
     var monthCells = months.map(function (mk) {
       var v = byMonth[mk] || 0;

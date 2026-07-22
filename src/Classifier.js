@@ -2,6 +2,7 @@
  * 부서 귀속 판정 로직 — 키워드 우선순위 (스펙 3장)
  *
  * 판정 순서 (먼저 매치되는 규칙 우선):
+ *  0. 강한 제외 키워드 (예: 알바트로스세미나)    → 무조건 제외 (교수성함/아텍 여부 무관)
  *  1. 프로젝트 전용 prefix (아텍 고유 프로그램명) → 자동 포함
  *  2. 강한 확정 키워드 (아텍/ATC 등)            → 자동 포함
  *  3. 교수 성함 포함 + 타학과 키워드 미포함      → 자동 포함
@@ -13,15 +14,19 @@ var CLS = { INCLUDE: 'INCLUDE', EXCLUDE: 'EXCLUDE', REVIEW: 'REVIEW' };
 
 /**
  * @param {string} text 전표 텍스트
- * @param {Object} kw getKeywordLists_() 결과 {prefix, strong, professor, otherDept}
+ * @param {Object} kw getKeywordLists_() 결과 {strongExclude, prefix, strong, professor, otherDept}
  * @return {{verdict: string, reason: string}}
  */
 function classifyText_(text, kw) {
   var t = normStr_(text);
   var tUpper = t.toUpperCase();
 
+  // 0. 강한 제외 키워드 — 지융미 공용 프로그램 등 아텍 예산이 아닌 건. 교수 성함이 있어도 무조건 제외.
+  var hit = findKeyword_(tUpper, kw.strongExclude || []);
+  if (hit) return { verdict: CLS.EXCLUDE, reason: '강한제외키워드: ' + hit };
+
   // 1. 프로젝트 전용 prefix — 아텍만 쓰는 고유 프로그램명이므로 텍스트 포함 여부로 판정
-  var hit = findKeyword_(tUpper, kw.prefix);
+  hit = findKeyword_(tUpper, kw.prefix);
   if (hit) return { verdict: CLS.INCLUDE, reason: '프로젝트prefix: ' + hit };
 
   // 2. 강한 확정 키워드

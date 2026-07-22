@@ -4,6 +4,7 @@
  */
 
 var SEED_KEYWORDS = [
+  [KW_TYPE.STRONG_EXCLUDE, '알바트로스'], // 지융미 공용 세미나 — 아텍 교수 참여분도 아텍 예산 아님, 무조건 제외
   [KW_TYPE.PREFIX, 'Kakao테크포임팩트수업'],
   [KW_TYPE.PREFIX, 'ArtWithImpact'],
   [KW_TYPE.STRONG, '아텍'],

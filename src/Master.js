@@ -22,7 +22,7 @@ function getMasterIndex_() {
 
   var id = getSetting_(SETTING_KEY.MASTER_ID);
   if (!id) {
-    MASTER_CACHE_ = { available: false, lines: [], detailsByGroup: {} };
+    MASTER_CACHE_ = { available: false, lines: [], detailsByGroup: {}, detailsByFund: {} };
     return MASTER_CACHE_;
   }
 
@@ -46,7 +46,7 @@ function getMasterIndex_() {
  * 마스터 시트 2차원 배열 → 라인/그룹 인덱스 (순수 함수, 로컬 테스트 가능)
  */
 function parseMasterValues_(data) {
-  var empty = { available: false, lines: [], detailsByGroup: {} };
+  var empty = { available: false, lines: [], detailsByGroup: {}, detailsByFund: {} };
   if (!data || data.length < 2) return empty;
 
   // 헤더 행 탐색 (첫 10행 내)
@@ -60,7 +60,8 @@ function parseMasterValues_(data) {
   }
 
   var lines = [];
-  var detailsByGroup = {};
+  var detailsByGroup = {}; // 자금+약정항목 그룹별 상세분류 라벨
+  var detailsByFund = {};  // 자금 단위 상세분류 라벨 (코드 무관, 대기열 후보/집계 키에 사용)
   // 병합 스타일 빈 칸 forward-fill 상태
   var curFund = '', curItemCode = '', curFundName = '', curItemName = '';
 
@@ -92,12 +93,13 @@ function parseMasterValues_(data) {
 
     var gk = groupKey_(curFund, curItemCode);
     if (!detailsByGroup[gk]) detailsByGroup[gk] = [];
+    if (!detailsByFund[curFund]) detailsByFund[curFund] = [];
 
     var label = labelCell || firstLine_(descCell, 40);
     if (!label) label = '라인' + (detailsByGroup[gk].length + 1);
-    // 그룹 내 라벨 중복 시 번호 붙여 구분
+    // 자금 단위로 라벨 중복 시 번호 붙여 구분 — (자금+상세분류) 집계 키가 충돌하지 않도록 보장
     var base = label, n = 2;
-    while (detailsByGroup[gk].indexOf(label) >= 0) {
+    while (detailsByFund[curFund].indexOf(label) >= 0) {
       label = base + ' (' + n + ')';
       n++;
     }
@@ -111,10 +113,10 @@ function parseMasterValues_(data) {
       budget: hasBudget ? parseAmount_(budgetCell) : ''
     });
     detailsByGroup[gk].push(label);
+    detailsByFund[curFund].push(label);
   }
 
-  // 상세분류가 1개뿐인 그룹은 라벨을 비목 레벨로 흡수 (라벨명 그대로 두되 후보는 1개)
-  return { available: true, lines: lines, detailsByGroup: detailsByGroup };
+  return { available: true, lines: lines, detailsByGroup: detailsByGroup, detailsByFund: detailsByFund };
 }
 
 /**
@@ -186,6 +188,16 @@ function mapMasterHeader_(row) {
 function getDetailCandidates_(fund, itemCode) {
   var master = getMasterIndex_();
   return master.detailsByGroup[groupKey_(fund, itemCode)] || [];
+}
+
+/**
+ * 해당 자금(코드 무관) 전체의 상세분류 후보 목록.
+ * 세인트 약정항목 코드가 마스터 편성 코드와 달라(예: 학생활동지원비 43251010 vs 마스터 43221040)
+ * 그룹 단위로는 후보가 안 잡힐 때, 자금 단위 후보를 대기열에 제시해 사람이 직접 고르게 한다.
+ */
+function getFundDetailCandidates_(fund) {
+  var master = getMasterIndex_();
+  return (master.detailsByFund && master.detailsByFund[normStr_(fund)]) || [];
 }
 
 /**

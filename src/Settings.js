@@ -22,12 +22,13 @@ function getSettingsSheet_() {
 // 키워드 블록
 // ---------------------------------------------------------------------------
 
-/** 유형별 키워드 목록 { prefix, strong, professor, otherDept } */
+/** 유형별 키워드 목록 { strongExclude, prefix, strong, professor, otherDept } */
 function getKeywordLists_() {
   var raw = readKeywordRows_();
-  var out = { prefix: [], strong: [], professor: [], otherDept: [] };
+  var out = { strongExclude: [], prefix: [], strong: [], professor: [], otherDept: [] };
   raw.forEach(function (r) {
-    if (r.type === KW_TYPE.PREFIX) out.prefix.push(r.value);
+    if (r.type === KW_TYPE.STRONG_EXCLUDE) out.strongExclude.push(r.value);
+    else if (r.type === KW_TYPE.PREFIX) out.prefix.push(r.value);
     else if (r.type === KW_TYPE.STRONG) out.strong.push(r.value);
     else if (r.type === KW_TYPE.PROFESSOR) out.professor.push(r.value);
     else if (r.type === KW_TYPE.OTHER_DEPT) out.otherDept.push(r.value);
