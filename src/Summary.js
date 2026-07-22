@@ -49,26 +49,31 @@ function rebuildMonthlySummary() {
 
   var months = fiscalMonths_(monthsSet);
 
-  // 라인 목록: 마스터 라인 전체(실적 0이어도 표시) + 마스터에 없는 원장 라인
+  // 라인 순서 = 배정예산 마스터 시트의 행 순서를 그대로 따른다.
+  //  1) 마스터 라인 전체(실적 0이어도 표시)를 마스터 원본 순서대로
+  //  2) 마스터에 없는 원장 라인(배정예산 미편성 집행)은 맨 아래에 별도로 모아 표시
+  //     — 자금/약정항목 순으로 정렬해, 계획에 없던 집행을 한눈에 확인 가능
   var lines = [];
+  var extraLines = [];
   var lineKeySeen = {};
   master.lines.forEach(function (l) {
     var lk = l.fund + '|' + l.itemCode + '|' + l.detail;
     if (lineKeySeen[lk]) return;
     lineKeySeen[lk] = true;
-    lines.push(l);
+    lines.push(l); // 마스터 원본 순서 유지 (재정렬하지 않음)
   });
   Object.keys(ledgerLines).forEach(function (lk) {
     if (!lineKeySeen[lk]) {
       lineKeySeen[lk] = true;
-      lines.push(ledgerLines[lk]);
+      extraLines.push(ledgerLines[lk]);
     }
   });
-  lines.sort(function (a, b) {
+  extraLines.sort(function (a, b) {
     if (a.fund !== b.fund) return a.fund < b.fund ? -1 : 1;
     if (a.itemCode !== b.itemCode) return a.itemCode < b.itemCode ? -1 : 1;
     return a.detail < b.detail ? -1 : a.detail > b.detail ? 1 : 0;
   });
+  lines = lines.concat(extraLines);
 
   // 출력 테이블 구성
   var headers = SUMMARY_FIXED_HEADERS.concat(months, ['사용합계', '잔액']);
