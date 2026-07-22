@@ -2,8 +2,10 @@
  * 상세분류(세부 라인) 자동 라우팅 (스펙 4장)
  * - 자금+약정항목 그룹의 상세분류가 1개면 즉시 확정 (대부분 그룹 → 100% 자동)
  * - 2개 이상이면 설정 시트의 라우팅 규칙(키워드/prefix/기본값) 적용
+ * - 그래도 못 정하면, 후보 라벨 앞부분의 영문 접두어(TFI/AWI/ATC 등)가 텍스트에 그대로
+ *   있는지로 자동 매칭 (설정 불필요 — 마스터에서 라벨을 이 규칙대로 짓기만 하면 바로 동작)
  * - 약정항목 코드가 마스터에 없으면(세인트 코드≠마스터 편성 코드) 자금 단위 후보로 대기열 이동
- * - 규칙 매칭 실패 시 '상세분류 확인 대기열'로 보내 사람이 직접 선택
+ * - 그래도 매칭 실패 시 '상세분류 확인 대기열'로 보내 사람이 직접 선택
  */
 
 /**
@@ -51,9 +53,32 @@ function routeDetail_(src) {
     }
   }
 
+  // 라벨 접두어 키워드 자동 매칭 (설정 불필요) — 후보 라벨 앞부분의 영문 접두어
+  // (TFI/AWI/ATC 등)가 텍스트에 그대로 들어있으면 그 라벨로 확정.
+  // 새 접두어 프로그램이 생겨도 마스터 라벨만 이 규칙대로 지으면 설정 추가 없이 바로 동작한다.
+  var prefixMatches = candidates.filter(function (c) {
+    var prefix = detailLabelPrefix_(c);
+    return prefix && textUpper.indexOf(prefix) >= 0;
+  });
+  if (prefixMatches.length === 1) {
+    return {
+      resolved: true, detail: prefixMatches[0], candidates: candidates,
+      routeReason: '라벨 접두어 매칭(' + detailLabelPrefix_(prefixMatches[0]) + ')'
+    };
+  }
+  if (prefixMatches.length > 1) {
+    candidates = prefixMatches; // 접두어로 좁혀진 후보만 대기열에 제시
+  }
+
   // 자동 라우팅 실패 → 상세분류 확인 대기열 (사람이 후보 중 직접 선택)
   var reason = fundLevel
     ? '약정항목 코드(' + itemCode + ')가 마스터에 없어 자금 단위 상세분류 선택 필요'
     : '자동 라우팅 실패';
   return { resolved: false, detail: '', candidates: candidates, routeReason: reason };
+}
+
+/** 상세분류 라벨 앞부분의 영문 접두어(2자 이상, 예: TFI/AWI/ATC) 추출. 없으면 ''. */
+function detailLabelPrefix_(label) {
+  var m = normStr_(label).match(/^[A-Za-z]{2,}/);
+  return m ? m[0].toUpperCase() : '';
 }

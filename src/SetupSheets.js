@@ -27,7 +27,7 @@ var SEED_KEYWORDS = [
 // 스펙 4장 B의 라우팅 규칙 — 상세분류명은 addMasterDetailLabels()로 마스터에 채운 라벨과 동일
 // (OneTimeSetup.js MASTER_LABELS_2026_ 참고). 실데이터 401건 검증으로 확인된 매칭.
 var SEED_RULES = [
-  ['FGC9361000', '42381110', '포함', 'Kakao테크포임팩트수업', 'Kakao회의비'],
+  ['FGC9361000', '42381110', '포함', 'Kakao테크포임팩트수업', 'TFI회의비'],
   ['FGC9361000', '42381110', '포함', '아텍', 'AWI회의비'],
   ['FGC9361000', '42381110', '포함', 'ArtWithImpact', 'AWI회의비'],
   ['TBC0184', '42371110', '기본값', '', '온라인홍보'],
