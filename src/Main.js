@@ -16,6 +16,7 @@ function onOpen() {
     .addSeparator()
     .addItem('키워드 관리 (사이드바)', 'showKeywordSidebar')
     .addItem('라우팅 규칙 검증', 'validateRoutingRules')
+    .addItem('상세분류명 변경 반영', 'renameDetailLabel')
     .addItem('시트 초기화/점검', 'initializeSheets')
     .addSeparator()
     .addItem('[1회성] 마스터 상세분류명 라벨 채우기', 'menuAddMasterDetailLabels')
