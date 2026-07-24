@@ -118,7 +118,7 @@ function rebuildMonthlySummary() {
 
   // 시트 기록
   sh.clearContents();
-  sh.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold');
+  sh.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold').setBackground(SHEET_HEADER_BG_);
   if (out.length) {
     sh.getRange(2, 1, out.length, headers.length).setValues(out);
     // 금액 컬럼 포맷 (배정액부터 끝까지)
