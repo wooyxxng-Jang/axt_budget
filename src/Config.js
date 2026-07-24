@@ -6,6 +6,7 @@
 var SHEET = {
   LEDGER: '원장',
   SUMMARY: '월별집계',
+  CODE_VIEW: '코드별 보기',
   REVIEW: '검토대기함',
   DETAIL_QUEUE: '상세분류 확인 대기열',
   SCHOLARSHIP: '장학금 분류 대기함',
@@ -34,9 +35,10 @@ var KW_TYPE = {
   PREFIX: 'Project Prefix',          // 아텍 고유 프로그램명
   STRONG: 'Strong Include',          // 아텍/ATC 등
   PROFESSOR: 'Professor Name',
-  OTHER_DEPT: 'Other Dept'
+  OTHER_DEPT: 'Other Dept',
+  SUMMARY_CODE: 'Summary Code'       // 월별집계 '코드' 열 드롭다운 레지스트리 (예: 회의비/ATC/활동비)
 };
-var KW_TYPE_LIST = [KW_TYPE.STRONG_EXCLUDE, KW_TYPE.PREFIX, KW_TYPE.STRONG, KW_TYPE.PROFESSOR, KW_TYPE.OTHER_DEPT];
+var KW_TYPE_LIST = [KW_TYPE.STRONG_EXCLUDE, KW_TYPE.PREFIX, KW_TYPE.STRONG, KW_TYPE.PROFESSOR, KW_TYPE.OTHER_DEPT, KW_TYPE.SUMMARY_CODE];
 
 // 마이그레이션용: 이전(한글) 유형 값 → 새 영문 값
 var KW_TYPE_LEGACY_MAP = {

@@ -36,7 +36,7 @@ function menuAddMasterDetailLabels() {
 function menuRebuildSummary() {
   var result = rebuildMonthlySummary();
   SpreadsheetApp.getActive().toast(
-    '월별집계 재계산 완료 — 라인 ' + result.lines + '개 / 월 ' + result.months + '개',
+    '월별집계 재계산 완료 — 라인 ' + result.lines + '개 / 월 ' + result.months + '개 (코드별 보기도 함께 갱신됨)',
     'AXT 예산', 5
   );
 }

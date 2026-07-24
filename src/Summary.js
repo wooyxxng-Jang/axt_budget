@@ -3,9 +3,11 @@
  * - 배정예산 마스터와 동일한 레이아웃(자금/비목/상세분류) × 월별 컬럼
  * - 원장 데이터를 전표일자 기준으로 자동 합산 + 배정액 대비 잔액 계산
  * - 매번 원장 전체를 기준으로 재계산 (재업로드에도 안전)
+ * - '코드' 열(맨 앞)은 사람이 드롭다운으로 직접 지정하는 값이라 재계산 시에도 보존한다
+ *   (재계산 직전 시트에서 라인별 코드를 읽어와 같은 라인에 다시 채워 넣음)
  */
 
-var SUMMARY_FIXED_HEADERS = ['자금', '자금명', '약정항목', '약정항목 명', '상세분류', '배정액'];
+var SUMMARY_FIXED_HEADERS = ['코드', '자금', '자금명', '약정항목', '약정항목 명', '상세분류', '배정액'];
 
 /**
  * 월별집계 합산 키.
@@ -93,6 +95,10 @@ function rebuildMonthlySummary() {
   });
   lines = lines.concat(extraLines);
 
+  // 시트 재작성 전, 라인별로 사람이 지정해둔 '코드' 값을 보존해둔다 (같은 라인 키로 복원)
+  var sh = ensureSheet_(SHEET.SUMMARY, null);
+  var codeMap = readExistingSummaryCodes_(sh);
+
   // 출력 테이블 구성
   var headers = SUMMARY_FIXED_HEADERS.concat(months, ['사용합계', '잔액']);
   var out = lines.map(function (l) {
@@ -105,12 +111,12 @@ function rebuildMonthlySummary() {
     });
     var budget = (l.budget === '' || l.budget === null || l.budget === undefined) ? '' : Number(l.budget);
     var remain = budget === '' ? '' : budget - total;
-    return [l.fund, l.fundName, l.itemCode, l.itemName, l.detail, budget]
+    var code = codeMap[l._key] || '';
+    return [code, l.fund, l.fundName, l.itemCode, l.itemName, l.detail, budget]
       .concat(monthCells, [total, remain]);
   });
 
   // 시트 기록
-  var sh = ensureSheet_(SHEET.SUMMARY, null);
   sh.clearContents();
   sh.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold');
   if (out.length) {
@@ -120,8 +126,44 @@ function rebuildMonthlySummary() {
       .setNumberFormat('#,##0');
   }
   sh.setFrozenRows(1);
-  sh.setFrozenColumns(5);
+  sh.setFrozenColumns(6);
+
+  // '코드' 열 드롭다운 (설정 시트 키워드 블록의 'Summary Code' 유형 목록)
+  var codes = getSummaryCodes_();
+  if (out.length) {
+    if (codes.length) {
+      var codeRule = SpreadsheetApp.newDataValidation().requireValueInList(codes, true).setAllowInvalid(false).build();
+      sh.getRange(2, 1, out.length, 1).setDataValidation(codeRule);
+    } else {
+      sh.getRange(2, 1, out.length, 1).clearDataValidations();
+    }
+  }
+
+  rebuildCodeView_();
   return { lines: out.length, months: months.length };
+}
+
+/** 재계산 직전의 월별집계 시트에서 라인 키(자금+상세분류/약정항목) → '코드' 값을 읽어온다 */
+function readExistingSummaryCodes_(sh) {
+  var map = {};
+  var last = sh.getLastRow();
+  if (last < 2) return map;
+  var lastCol = sh.getLastColumn();
+  if (lastCol < 1) return map;
+  var headerRow = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(normStr_);
+  var cCode = headerRow.indexOf('코드');
+  var cFund = headerRow.indexOf('자금');
+  var cItem = headerRow.indexOf('약정항목');
+  var cDetail = headerRow.indexOf('상세분류');
+  if (cCode < 0 || cFund < 0 || cDetail < 0) return map; // 코드 열 도입 이전 시트(최초 실행)
+  var vals = sh.getRange(2, 1, last - 1, lastCol).getValues();
+  vals.forEach(function (row) {
+    var code = normStr_(row[cCode]);
+    if (!code) return;
+    var lk = summaryLineKey_(row[cFund], cItem >= 0 ? row[cItem] : '', row[cDetail]);
+    map[lk] = code;
+  });
+  return map;
 }
 
 /**

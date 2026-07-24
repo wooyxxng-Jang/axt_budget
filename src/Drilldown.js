@@ -29,10 +29,10 @@ function showDrilldown() {
     return;
   }
 
-  var lineVals = sh.getRange(row, 1, 1, 5).getValues()[0];
-  var fund = normStr_(lineVals[0]);
-  var itemCode = normStr_(lineVals[2]);
-  var detail = normStr_(lineVals[4]);
+  var lineVals = sh.getRange(row, 1, 1, 6).getValues()[0];
+  var fund = normStr_(lineVals[1]);
+  var itemCode = normStr_(lineVals[3]);
+  var detail = normStr_(lineVals[5]);
 
   var cRef = LEDGER_HEADERS.indexOf('참조전표');
   var cItemNo = LEDGER_HEADERS.indexOf('개별항목');

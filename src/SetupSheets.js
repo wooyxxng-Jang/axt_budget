@@ -48,6 +48,7 @@ function initializeSheets() {
   // 데이터 시트들
   setupDataSheet_(SHEET.LEDGER, LEDGER_HEADERS);
   setupDataSheet_(SHEET.SUMMARY, null);
+  setupDataSheet_(SHEET.CODE_VIEW, null); // 헤더/내용은 rebuildCodeView_()가 채움
   var review = setupDataSheet_(SHEET.REVIEW, REVIEW_HEADERS);
   var detailQ = setupDataSheet_(SHEET.DETAIL_QUEUE, DETAILQ_HEADERS);
   var schol = setupDataSheet_(SHEET.SCHOLARSHIP, SCHOLARSHIP_HEADERS);
@@ -59,7 +60,7 @@ function initializeSheets() {
   setColumnValidation_(schol, SCHOLARSHIP_HEADERS.indexOf('귀속') + 1, TAG_VALUES);
 
   // 시트 순서 정리
-  var order = [SHEET.SUMMARY, SHEET.LEDGER, SHEET.REVIEW, SHEET.DETAIL_QUEUE, SHEET.SCHOLARSHIP, SHEET.SETTINGS, SHEET.AUDIT];
+  var order = [SHEET.SUMMARY, SHEET.CODE_VIEW, SHEET.LEDGER, SHEET.REVIEW, SHEET.DETAIL_QUEUE, SHEET.SCHOLARSHIP, SHEET.SETTINGS, SHEET.AUDIT];
   order.forEach(function (name, i) {
     var sh = ss.getSheetByName(name);
     if (sh) {

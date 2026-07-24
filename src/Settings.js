@@ -133,6 +133,13 @@ function validateKwType_(type) {
   if (KW_TYPE_LIST.indexOf(type) < 0) throw new Error('알 수 없는 키워드 유형: ' + type);
 }
 
+/** 월별집계 '코드' 열 드롭다운용 등록된 코드 목록 (키워드 관리 사이드바에서 'Summary Code' 유형으로 등록/삭제) */
+function getSummaryCodes_() {
+  return readKeywordRows_()
+    .filter(function (r) { return r.type === KW_TYPE.SUMMARY_CODE; })
+    .map(function (r) { return r.value; });
+}
+
 // ---------------------------------------------------------------------------
 // 상세분류 라우팅 규칙 블록 (스펙 4장 B)
 // ---------------------------------------------------------------------------
